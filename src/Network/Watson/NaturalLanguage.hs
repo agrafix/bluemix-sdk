@@ -3,11 +3,14 @@ module Network.Watson.NaturalLanguage
     ( -- * Request
       QueryBody(..)
     , KeywordOptions(..)
+    , ConceptOptions(..)
     , Query(..)
       -- * Response
     , Emotion(..)
     , Sentiment(..)
     , Keyword(..)
+    , Concept(..)
+    , Category(..)
     , Response(..)
     , Language(..)
       -- * API Call
@@ -36,10 +39,17 @@ data KeywordOptions
     , ko_limit :: !Int
     } deriving (Show, Eq)
 
+data ConceptOptions
+    = ConceptOptions
+    { co_limit :: !Int
+    } deriving (Show, Eq)
+
 data Query
     = Query
     { q_body :: !QueryBody
     , q_keywords :: !(Maybe KeywordOptions)
+    , q_categories :: !Bool
+    , q_concepts :: !(Maybe ConceptOptions)
     } deriving (Show, Eq)
 
 instance ToJSON Query where
@@ -59,8 +69,14 @@ instance ToJSON Query where
                     , "emotion" .= ko_emotion kwds
                     , "limit" .= ko_limit kwds
                     ]
+                , flip fmap (q_concepts q) $ \cp ->
+                  "concepts" .=
+                    object
+                    [ "limit" .= co_limit cp
+                    ]
+                , if q_categories q then (Just $ "categories" .= object []) else Nothing
                 ]
-        in object ( body : "features" .= feats : [] )
+        in object [body, "features" .= feats]
 
 data Emotion
     = Emotion
@@ -105,6 +121,34 @@ instance FromJSON Keyword where
         <*> o .:? "sentiment"
         <*> o .:? "emotion"
 
+data Concept
+    = Concept
+    { c_concept :: !T.Text
+    , c_relevance :: Double
+    , c_dbpedia :: !T.Text
+    } deriving (Show, Eq)
+
+instance FromJSON Concept where
+    parseJSON =
+        withObject "Concept" $ \o ->
+        Concept
+        <$> o .: "text"
+        <*> o .: "relevance"
+        <*> o .: "dbpedia_resource"
+
+data Category
+    = Category
+    { c_label :: !T.Text
+    , c_score :: !Double
+    } deriving (Show, Eq)
+
+instance FromJSON Category where
+    parseJSON =
+        withObject "Category" $ \o ->
+        Category
+        <$> o .: "label"
+        <*> o .: "score"
+
 data Language
     = LArabic
     | LEnglish
@@ -136,6 +180,8 @@ data Response
     = Response
     { r_language :: !Language
     , r_keywords :: !(V.Vector Keyword)
+    , r_concepts :: !(V.Vector Concept)
+    , r_categories :: !(V.Vector Category)
     } deriving (Show, Eq)
 
 instance FromJSON Response where
