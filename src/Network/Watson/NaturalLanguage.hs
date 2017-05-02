@@ -130,6 +130,7 @@ instance FromJSON Language where
           "ru" -> pure LRussian
           "es" -> pure LSpanish
           "sv" -> pure LSwedish
+          _ -> fail ("Unsupported language: " ++ show t)
 
 data Response
     = Response
@@ -143,9 +144,10 @@ instance FromJSON Response where
         Response
         <$> o .: "language"
         <*> o .:? "keywords" .!= V.empty
+        <*> o .:? "concepts" .!= V.empty
+        <*> o .:? "categories" .!= V.empty
 
 data NaturalLanguage
-    = NaturalLanguage
 
 makeAuth :: Manager -> T.Text -> T.Text -> Auth NaturalLanguage
 makeAuth mgr user pass =
