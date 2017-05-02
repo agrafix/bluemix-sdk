@@ -14,7 +14,7 @@ module Network.Watson.NaturalLanguage
     , Response(..)
     , Language(..)
       -- * API Call
-    , NaturalLanguage, makeAuth, naturalLanguage, Result(..)
+    , NaturalLanguage, makeAuth, Auth(..), naturalLanguage, Result(..)
     )
 where
 
