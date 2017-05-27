@@ -1,5 +1,5 @@
 name:                bluemix-sdk
-version:             0.1.0.0
+version:             0.1.1.0
 synopsis:            Bindings to Bluemix APIs
 description:         Bindings to Bluemix APIs
 homepage:            https://github.com/agrafix/bluemix-sdk#readme

@@ -24,6 +24,7 @@ import Network.Bluemix.Http
 import Data.Aeson hiding (Result(..))
 import Data.Maybe
 import qualified Data.Text as T
+import qualified Data.Traversable as T
 import qualified Data.Vector as V
 
 data QueryBody
@@ -50,6 +51,7 @@ data Query
     , q_keywords :: !(Maybe KeywordOptions)
     , q_categories :: !Bool
     , q_concepts :: !(Maybe ConceptOptions)
+    , q_emotion :: !Bool
     } deriving (Show, Eq)
 
 instance ToJSON Query where
@@ -75,6 +77,9 @@ instance ToJSON Query where
                     [ "limit" .= co_limit cp
                     ]
                 , if q_categories q then (Just $ "categories" .= object []) else Nothing
+                , if q_emotion q
+                    then (Just $ "emotion" .= object ["document" .= True])
+                    else Nothing
                 ]
         in object [body, "features" .= feats]
 
@@ -182,16 +187,20 @@ data Response
     , r_keywords :: !(V.Vector Keyword)
     , r_concepts :: !(V.Vector Concept)
     , r_categories :: !(V.Vector Category)
+    , r_emotion :: !(Maybe Emotion)
     } deriving (Show, Eq)
 
 instance FromJSON Response where
     parseJSON =
         withObject "Response" $ \o  ->
-        Response
-        <$> o .: "language"
-        <*> o .:? "keywords" .!= V.empty
-        <*> o .:? "concepts" .!= V.empty
-        <*> o .:? "categories" .!= V.empty
+        do mEmotion <- o .:? "emotion"
+           mDocEmotion <- T.mapM (.: "document") mEmotion
+           Response
+               <$> o .: "language"
+               <*> o .:? "keywords" .!= V.empty
+               <*> o .:? "concepts" .!= V.empty
+               <*> o .:? "categories" .!= V.empty
+               <*> pure mDocEmotion
 
 data NaturalLanguage
 
