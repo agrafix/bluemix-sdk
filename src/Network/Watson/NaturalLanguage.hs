@@ -53,6 +53,7 @@ data Query
     , q_categories :: !Bool
     , q_concepts :: !(Maybe ConceptOptions)
     , q_emotion :: !Bool
+    , q_sentiment :: !Bool
     } deriving (Show, Eq)
 
 instance ToJSON Query where
@@ -80,6 +81,9 @@ instance ToJSON Query where
                 , if q_categories q then (Just $ "categories" .= object []) else Nothing
                 , if q_emotion q
                     then (Just $ "emotion" .= object ["document" .= True])
+                    else Nothing
+                , if q_sentiment q
+                    then (Just $ "sentiment" .= object ["document" .= True])
                     else Nothing
                 ]
         in object [body, "features" .= feats]
@@ -189,6 +193,7 @@ data Response
     , r_concepts :: !(V.Vector Concept)
     , r_categories :: !(V.Vector Category)
     , r_emotion :: !(Maybe Emotion)
+    , r_sentiment :: !(Maybe Sentiment)
     } deriving (Show, Eq)
 
 instance FromJSON Response where
@@ -197,12 +202,16 @@ instance FromJSON Response where
         do mEmotion <- o .:? "emotion"
            mDocEmotion <-
                T.mapM (flip (.:) "document" >=> flip (.:) "emotion") mEmotion
+           mSentiment <- o .:? "sentiment"
+           mDocSentiment <-
+               T.mapM (.: "document") mSentiment
            Response
                <$> o .: "language"
                <*> o .:? "keywords" .!= V.empty
                <*> o .:? "concepts" .!= V.empty
                <*> o .:? "categories" .!= V.empty
                <*> pure mDocEmotion
+               <*> pure mDocSentiment
 
 data NaturalLanguage
 
