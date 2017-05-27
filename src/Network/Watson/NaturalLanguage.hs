@@ -21,6 +21,7 @@ where
 import Network.Bluemix.Auth
 import Network.Bluemix.Http
 
+import Control.Monad
 import Data.Aeson hiding (Result(..))
 import Data.Maybe
 import qualified Data.Text as T
@@ -194,7 +195,8 @@ instance FromJSON Response where
     parseJSON =
         withObject "Response" $ \o  ->
         do mEmotion <- o .:? "emotion"
-           mDocEmotion <- T.mapM (.: "document") mEmotion
+           mDocEmotion <-
+               T.mapM (flip (.:) "document" >=> flip (.:) "emotion") mEmotion
            Response
                <$> o .: "language"
                <*> o .:? "keywords" .!= V.empty
